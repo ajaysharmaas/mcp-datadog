@@ -8,26 +8,17 @@ namespace Viamus.DataDog.Mcp.Server.Tools;
 [McpServerToolType]
 public sealed class MonitorsTool(IDatadogClient datadogClient, ILogger<MonitorsTool> logger)
 {
-    [McpServerTool(Name = "list_monitors")]
-    [Description("List all monitors in Datadog. Can filter by name, tags, or state. Use this to get an overview of monitoring alerts.")]
-    public async Task<string> ListMonitorsAsync(
+    [McpServerTool(Name = "list_monitors_summary")]
+    [Description("List monitors with minimal data (id, name, state only). Use this for quick overview and navigation. For full details, use get_monitor with a specific ID.")]
+    public async Task<string> ListMonitorsSummaryAsync(
         [Description("Filter monitors by name (supports wildcards)")]
         string? name = null,
 
-        [Description("Filter monitors by tags (comma-separated). Example: 'env:prod,team:backend'")]
+        [Description("Filter by monitor tags (comma-separated). Example: 'env:prod,team:backend'. These are tags assigned to the monitor itself.")]
         string? tags = null,
 
-        [Description("Filter monitors by monitor tags (comma-separated)")]
-        string? monitorTags = null,
-
-        [Description("Include group states in response. Comma-separated: 'all', 'alert', 'warn', 'no data', 'ok'")]
-        string? groupStates = null,
-
-        [Description("Include downtime information")]
-        bool withDowntimes = false,
-
-        [Description("Number of monitors per page (1-1000). Default: 100")]
-        int pageSize = 100,
+        [Description("Number of monitors per page (1-50). Default: 25")]
+        int pageSize = 25,
 
         [Description("Page number (0-indexed). Default: 0")]
         int page = 0,
@@ -36,7 +27,75 @@ public sealed class MonitorsTool(IDatadogClient datadogClient, ILogger<MonitorsT
     {
         try
         {
-            pageSize = Math.Clamp(pageSize, 1, 1000);
+            pageSize = Math.Clamp(pageSize, 1, 50);
+            page = Math.Max(0, page);
+
+            logger.LogInformation("Listing monitors summary: name={Name}, tags={Tags}, page={Page}, pageSize={PageSize}",
+                name, tags, page, pageSize);
+
+            var monitors = await datadogClient.GetMonitorsAsync(
+                groupStates: null,
+                name: name,
+                tags: null,
+                monitorTags: tags,
+                withDowntimes: false,
+                pageSize,
+                page,
+                cancellationToken);
+
+            var response = new
+            {
+                count = monitors.Count,
+                page,
+                pageSize,
+                hasMore = monitors.Count == pageSize,
+                monitors = monitors.Select(m => new
+                {
+                    id = m.Id,
+                    name = m.Name,
+                    state = m.OverallState
+                })
+            };
+
+            return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Failed to list monitors summary");
+            return JsonSerializer.Serialize(new { error = $"Failed to list monitors: {ex.Message}" });
+        }
+    }
+
+    [McpServerTool(Name = "list_monitors")]
+    [Description("List monitors with full metadata. Use list_monitors_summary for lighter queries.")]
+    public async Task<string> ListMonitorsAsync(
+        [Description("Filter monitors by name (supports wildcards)")]
+        string? name = null,
+
+        [Description("Filter by scope tags in monitor query (comma-separated). Example: 'host:myhost,service:api'")]
+        string? tags = null,
+
+        [Description("Filter by monitor tags (comma-separated). Example: 'env:prod,team:backend'. These are tags assigned to the monitor itself.")]
+        string? monitorTags = null,
+
+        [Description("Include group states in response. Comma-separated: 'all', 'alert', 'warn', 'no data', 'ok'")]
+        string? groupStates = null,
+
+        [Description("Include downtime information")]
+        bool withDowntimes = false,
+
+        [Description("Number of monitors per page (1-50). Default: 25")]
+        int pageSize = 25,
+
+        [Description("Page number (0-indexed). Default: 0")]
+        int page = 0,
+
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            pageSize = Math.Clamp(pageSize, 1, 50);
+            page = Math.Max(0, page);
 
             logger.LogInformation("Listing monitors: name={Name}, tags={Tags}, page={Page}, pageSize={PageSize}",
                 name, tags, page, pageSize);
@@ -53,9 +112,10 @@ public sealed class MonitorsTool(IDatadogClient datadogClient, ILogger<MonitorsT
 
             var response = new
             {
-                total = monitors.Count,
+                count = monitors.Count,
                 page,
                 pageSize,
+                hasMore = monitors.Count == pageSize,
                 monitors = monitors.Select(m => new
                 {
                     id = m.Id,

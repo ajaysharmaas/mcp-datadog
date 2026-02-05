@@ -113,6 +113,9 @@ public class MetricsToolTests
         var json = JsonDocument.Parse(result);
         json.RootElement.GetProperty("total").GetInt32().Should().Be(4);
         json.RootElement.GetProperty("metrics").EnumerateArray().Should().HaveCount(4);
+        json.RootElement.GetProperty("page").GetInt32().Should().Be(0);
+        json.RootElement.GetProperty("pageSize").GetInt32().Should().Be(25);
+        json.RootElement.GetProperty("totalPages").GetInt32().Should().Be(1);
     }
 
     [Fact]
@@ -198,5 +201,64 @@ public class MetricsToolTests
         // Assert
         capturedFrom.Should().BeCloseTo(DateTime.UtcNow.AddDays(-1), TimeSpan.FromMinutes(1));
         capturedTo.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+    }
+
+    [Fact]
+    public async Task ListMetricsAsync_ReturnsPaginatedResults()
+    {
+        // Arrange
+        var metrics = Enumerable.Range(1, 10)
+            .Select(i => $"system.metric.{i}")
+            .ToList();
+
+        _mockClient.GetMetricNamesAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(metrics);
+
+        // Act
+        var result = await _tool.ListMetricsAsync(pageSize: 3, page: 1);
+
+        // Assert
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("total").GetInt32().Should().Be(10);
+        json.RootElement.GetProperty("page").GetInt32().Should().Be(1);
+        json.RootElement.GetProperty("pageSize").GetInt32().Should().Be(3);
+        json.RootElement.GetProperty("totalPages").GetInt32().Should().Be(4);
+        json.RootElement.GetProperty("metrics").EnumerateArray().Should().HaveCount(3);
+
+        // Verify it returns page 1 (items 4-6)
+        var firstMetric = json.RootElement.GetProperty("metrics").EnumerateArray().First();
+        firstMetric.GetString().Should().Be("system.metric.4");
+    }
+
+    [Fact]
+    public async Task ListMetricsAsync_ClampsPageSize_ToValidRange()
+    {
+        // Arrange
+        _mockClient.GetMetricNamesAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(new List<string>());
+
+        // Act
+        var result = await _tool.ListMetricsAsync(pageSize: 1000);
+
+        // Assert
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("pageSize").GetInt32().Should().Be(50); // Clamped to max
+    }
+
+    [Fact]
+    public async Task ListMetricsAsync_HandlesNegativePage_Gracefully()
+    {
+        // Arrange
+        var metrics = new List<string> { "system.cpu.user" };
+
+        _mockClient.GetMetricNamesAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(metrics);
+
+        // Act
+        var result = await _tool.ListMetricsAsync(page: -5);
+
+        // Assert
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("page").GetInt32().Should().Be(0); // Clamped to min
     }
 }

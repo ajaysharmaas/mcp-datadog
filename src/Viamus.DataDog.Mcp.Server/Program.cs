@@ -1,9 +1,12 @@
 using Viamus.DataDog.Mcp.Server.Configuration;
+using Viamus.DataDog.Mcp.Server.Middleware;
 using Viamus.DataDog.Mcp.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Datadog settings
+// Configure settings
+builder.Services.Configure<ServerSecuritySettings>(
+    builder.Configuration.GetSection(ServerSecuritySettings.SectionName));
 builder.Services.Configure<DatadogSettings>(
     builder.Configuration.GetSection(DatadogSettings.SectionName));
 
@@ -20,6 +23,9 @@ builder.Services
     .WithToolsFromAssembly();
 
 var app = builder.Build();
+
+// API key authentication middleware
+app.UseApiKeyAuthentication();
 
 // Health check endpoint
 app.MapHealthChecks("/health");

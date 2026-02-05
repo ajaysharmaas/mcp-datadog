@@ -11,18 +11,37 @@ public sealed class DashboardsTool(IDatadogClient datadogClient, ILogger<Dashboa
     [McpServerTool(Name = "list_dashboards")]
     [Description("List all dashboards in Datadog. Use this to discover available dashboards and their IDs.")]
     public async Task<string> ListDashboardsAsync(
+        [Description("Number of dashboards per page (1-50). Default: 25")]
+        int pageSize = 25,
+
+        [Description("Page number (0-indexed). Default: 0")]
+        int page = 0,
+
         CancellationToken cancellationToken = default)
     {
         try
         {
-            logger.LogInformation("Listing dashboards");
+            pageSize = Math.Clamp(pageSize, 1, 50);
+            page = Math.Max(0, page);
+
+            logger.LogInformation("Listing dashboards: page={Page}, pageSize={PageSize}", page, pageSize);
 
             var result = await datadogClient.GetDashboardsAsync(cancellationToken);
 
+            var allDashboards = result.Dashboards ?? [];
+            var totalCount = allDashboards.Count;
+            var pagedDashboards = allDashboards
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToList();
+
             var response = new
             {
-                total = result.Dashboards?.Count ?? 0,
-                dashboards = result.Dashboards?.Select(d => new
+                total = totalCount,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                dashboards = pagedDashboards.Select(d => new
                 {
                     id = d.Id,
                     title = d.Title,

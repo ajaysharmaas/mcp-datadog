@@ -8,6 +8,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8081
+      - ServerSecurity__ApiKey=${SERVER_API_KEY:-}
+      - ServerSecurity__RequireApiKey=${SERVER_REQUIRE_API_KEY:-false}
       - Datadog__ApiKey=${DATADOG_API_KEY}
       - Datadog__ApplicationKey=${DATADOG_APPLICATION_KEY}
       - Datadog__Site=${DATADOG_SITE:-datadoghq.com}

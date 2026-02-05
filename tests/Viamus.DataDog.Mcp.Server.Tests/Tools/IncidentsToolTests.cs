@@ -120,7 +120,7 @@ public class IncidentsToolTests
         await _tool.ListIncidentsAsync(pageSize: 500);
 
         // Assert
-        capturedPageSize.Should().Be(100); // Clamped to max
+        capturedPageSize.Should().Be(50); // Clamped to max
     }
 
     [Fact]

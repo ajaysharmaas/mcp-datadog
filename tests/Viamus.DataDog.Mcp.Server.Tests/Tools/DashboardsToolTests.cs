@@ -64,6 +64,9 @@ public class DashboardsToolTests
         var json = JsonDocument.Parse(result);
         json.RootElement.GetProperty("total").GetInt32().Should().Be(2);
         json.RootElement.GetProperty("dashboards").EnumerateArray().Should().HaveCount(2);
+        json.RootElement.GetProperty("page").GetInt32().Should().Be(0);
+        json.RootElement.GetProperty("pageSize").GetInt32().Should().Be(25);
+        json.RootElement.GetProperty("totalPages").GetInt32().Should().Be(1);
     }
 
     [Fact]
@@ -213,5 +216,78 @@ public class DashboardsToolTests
         // Assert
         var json = JsonDocument.Parse(result);
         json.RootElement.GetProperty("widgetCount").GetInt32().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ListDashboardsAsync_ReturnsPaginatedResults()
+    {
+        // Arrange
+        var dashboards = Enumerable.Range(1, 10)
+            .Select(i => new DashboardSummary
+            {
+                Id = $"dash-{i}",
+                Title = $"Dashboard {i}"
+            })
+            .ToList();
+
+        var response = new DashboardListResponse { Dashboards = dashboards };
+
+        _mockClient.GetDashboardsAsync(Arg.Any<CancellationToken>())
+            .Returns(response);
+
+        // Act
+        var result = await _tool.ListDashboardsAsync(pageSize: 3, page: 1);
+
+        // Assert
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("total").GetInt32().Should().Be(10);
+        json.RootElement.GetProperty("page").GetInt32().Should().Be(1);
+        json.RootElement.GetProperty("pageSize").GetInt32().Should().Be(3);
+        json.RootElement.GetProperty("totalPages").GetInt32().Should().Be(4);
+        json.RootElement.GetProperty("dashboards").EnumerateArray().Should().HaveCount(3);
+
+        // Verify it returns page 1 (items 4-6)
+        var firstDashboard = json.RootElement.GetProperty("dashboards").EnumerateArray().First();
+        firstDashboard.GetProperty("id").GetString().Should().Be("dash-4");
+    }
+
+    [Fact]
+    public async Task ListDashboardsAsync_ClampsPageSize_ToValidRange()
+    {
+        // Arrange
+        var response = new DashboardListResponse { Dashboards = new List<DashboardSummary>() };
+
+        _mockClient.GetDashboardsAsync(Arg.Any<CancellationToken>())
+            .Returns(response);
+
+        // Act
+        var result = await _tool.ListDashboardsAsync(pageSize: 1000);
+
+        // Assert
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("pageSize").GetInt32().Should().Be(50); // Clamped to max
+    }
+
+    [Fact]
+    public async Task ListDashboardsAsync_HandlesNegativePage_Gracefully()
+    {
+        // Arrange
+        var response = new DashboardListResponse
+        {
+            Dashboards = new List<DashboardSummary>
+            {
+                new() { Id = "dash-1", Title = "Dashboard 1" }
+            }
+        };
+
+        _mockClient.GetDashboardsAsync(Arg.Any<CancellationToken>())
+            .Returns(response);
+
+        // Act
+        var result = await _tool.ListDashboardsAsync(page: -5);
+
+        // Assert
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("page").GetInt32().Should().Be(0); // Clamped to min
     }
 }

@@ -11,7 +11,7 @@ public sealed class IncidentsTool(IDatadogClient datadogClient, ILogger<Incident
     [McpServerTool(Name = "list_incidents")]
     [Description("List incidents from Datadog. Use this to get an overview of ongoing and past incidents.")]
     public async Task<string> ListIncidentsAsync(
-        [Description("Number of incidents per page (1-100). Default: 25")]
+        [Description("Number of incidents per page (1-50). Default: 25")]
         int pageSize = 25,
 
         [Description("Page offset for pagination. Default: 0")]
@@ -21,7 +21,7 @@ public sealed class IncidentsTool(IDatadogClient datadogClient, ILogger<Incident
     {
         try
         {
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            pageSize = Math.Clamp(pageSize, 1, 50);
 
             logger.LogInformation("Listing incidents: pageSize={PageSize}, pageOffset={PageOffset}", pageSize, pageOffset);
 

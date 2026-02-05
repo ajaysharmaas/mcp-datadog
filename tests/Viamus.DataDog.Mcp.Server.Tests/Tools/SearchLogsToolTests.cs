@@ -175,6 +175,75 @@ public class SearchLogsToolTests
         await _tool.SearchLogsAsync(query, limit: 5000);
 
         // Assert
-        capturedLimit.Should().Be(1000); // Clamped to max
+        capturedLimit.Should().Be(50); // Clamped to max
+    }
+
+    [Fact]
+    public async Task SearchLogsAsync_PassesCursor_ForPagination()
+    {
+        // Arrange
+        var query = "service:api";
+        var response = new LogSearchResponse
+        {
+            Data = new List<LogEntry>(),
+            Meta = new LogMeta
+            {
+                Page = new LogPage { After = "next-cursor-token" }
+            }
+        };
+
+        string? capturedCursor = null;
+
+        _mockClient.SearchLogsAsync(
+            Arg.Any<string>(),
+            Arg.Any<DateTime>(),
+            Arg.Any<DateTime>(),
+            Arg.Any<int>(),
+            Arg.Any<string?>(),
+            Arg.Do<string?>(c => capturedCursor = c),
+            Arg.Any<CancellationToken>()
+        ).Returns(response);
+
+        // Act
+        await _tool.SearchLogsAsync(query, cursor: "previous-cursor-token");
+
+        // Assert
+        capturedCursor.Should().Be("previous-cursor-token");
+    }
+
+    [Fact]
+    public async Task SearchLogsAsync_ReturnsCursor_WhenMoreResultsExist()
+    {
+        // Arrange
+        var query = "service:api";
+        var response = new LogSearchResponse
+        {
+            Data = new List<LogEntry>
+            {
+                new() { Id = "log-1", Attributes = new LogAttributes { Message = "test" } }
+            },
+            Meta = new LogMeta
+            {
+                Page = new LogPage { After = "next-page-cursor" }
+            }
+        };
+
+        _mockClient.SearchLogsAsync(
+            Arg.Any<string>(),
+            Arg.Any<DateTime>(),
+            Arg.Any<DateTime>(),
+            Arg.Any<int>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(response);
+
+        // Act
+        var result = await _tool.SearchLogsAsync(query);
+
+        // Assert
+        var json = JsonDocument.Parse(result);
+        json.RootElement.GetProperty("hasMore").GetBoolean().Should().BeTrue();
+        json.RootElement.GetProperty("cursor").GetString().Should().Be("next-page-cursor");
     }
 }

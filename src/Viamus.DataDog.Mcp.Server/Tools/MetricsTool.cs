@@ -69,18 +69,36 @@ public sealed class MetricsTool(IDatadogClient datadogClient, ILogger<MetricsToo
         [Description("Filter metrics by host name")]
         string? host = null,
 
+        [Description("Number of metrics per page (1-50). Default: 25")]
+        int pageSize = 25,
+
+        [Description("Page number (0-indexed). Default: 0")]
+        int page = 0,
+
         CancellationToken cancellationToken = default)
     {
         try
         {
-            logger.LogInformation("Listing metrics for host: {Host}", host ?? "all");
+            pageSize = Math.Clamp(pageSize, 1, 50);
+            page = Math.Max(0, page);
 
-            var metrics = await datadogClient.GetMetricNamesAsync(host, cancellationToken);
+            logger.LogInformation("Listing metrics for host: {Host}, page={Page}, pageSize={PageSize}", host ?? "all", page, pageSize);
+
+            var allMetrics = await datadogClient.GetMetricNamesAsync(host, cancellationToken);
+
+            var totalCount = allMetrics.Count;
+            var pagedMetrics = allMetrics
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToList();
 
             var response = new
             {
-                total = metrics.Count,
-                metrics = metrics.Take(500) // Limit to first 500 metrics
+                total = totalCount,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                metrics = pagedMetrics
             };
 
             return JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true });

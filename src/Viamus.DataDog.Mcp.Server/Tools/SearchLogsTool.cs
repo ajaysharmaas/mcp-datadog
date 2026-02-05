@@ -20,11 +20,14 @@ public sealed class SearchLogsTool(IDatadogClient datadogClient, ILogger<SearchL
         [Description("End time for the search (ISO 8601 format or 'now'). Default: now")]
         string? to = null,
 
-        [Description("Maximum number of logs to return (1-1000). Default: 100")]
-        int limit = 100,
+        [Description("Maximum number of logs to return (1-50). Default: 25")]
+        int limit = 25,
 
         [Description("Sort order: 'timestamp' (ascending) or '-timestamp' (descending). Default: -timestamp")]
         string? sort = null,
+
+        [Description("Pagination cursor from previous response. Use to fetch next page of results.")]
+        string? cursor = null,
 
         CancellationToken cancellationToken = default)
     {
@@ -33,7 +36,7 @@ public sealed class SearchLogsTool(IDatadogClient datadogClient, ILogger<SearchL
             var fromTime = ParseTime(from, TimeSpan.FromMinutes(-15));
             var toTime = ParseTime(to, TimeSpan.Zero);
 
-            limit = Math.Clamp(limit, 1, 1000);
+            limit = Math.Clamp(limit, 1, 50);
             sort ??= "-timestamp";
 
             logger.LogInformation("Searching logs: query={Query}, from={From}, to={To}, limit={Limit}",
@@ -45,7 +48,8 @@ public sealed class SearchLogsTool(IDatadogClient datadogClient, ILogger<SearchL
                 toTime,
                 limit,
                 sort,
-                cancellationToken: cancellationToken);
+                cursor,
+                cancellationToken);
 
             var response = new
             {
