@@ -23,15 +23,15 @@ public class DatadogSettingsTests
 
         // Assert
         settings.Site.Should().Be("datadoghq.com");
-        settings.BaseUrl.Should().Be("https://api.datadoghq.com");
+        settings.BaseUrl.Should().Be("https://datadoghq.com");
     }
 
     [Theory]
-    [InlineData("datadoghq.com", "https://api.datadoghq.com")]
-    [InlineData("datadoghq.eu", "https://api.datadoghq.eu")]
-    [InlineData("us3.datadoghq.com", "https://api.us3.datadoghq.com")]
-    [InlineData("us5.datadoghq.com", "https://api.us5.datadoghq.com")]
-    [InlineData("ap1.datadoghq.com", "https://api.ap1.datadoghq.com")]
+    [InlineData("datadoghq.com", "https://datadoghq.com")]
+    [InlineData("datadoghq.eu", "https://datadoghq.eu")]
+    [InlineData("us3.datadoghq.com", "https://us3.datadoghq.com")]
+    [InlineData("us5.datadoghq.com", "https://us5.datadoghq.com")]
+    [InlineData("ap1.datadoghq.com", "https://ap1.datadoghq.com")]
     public void BaseUrl_ConstructsCorrectly_ForDifferentSites(string site, string expectedBaseUrl)
     {
         // Arrange
