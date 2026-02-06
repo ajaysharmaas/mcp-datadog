@@ -1,5 +1,6 @@
 # MCP Datadog Server
 
+[![Build and Test](https://github.com/viamus/mcp-datadog/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/viamus/mcp-datadog/actions/workflows/build-and-test.yml)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
