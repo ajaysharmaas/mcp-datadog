@@ -35,7 +35,7 @@ public class MetricSeries
     public List<MetricUnit>? Unit { get; set; }
 
     [JsonPropertyName("pointlist")]
-    public List<List<double>>? PointList { get; set; }
+    public List<List<double?>>? PointList { get; set; }
 
     [JsonPropertyName("scope")]
     public string? Scope { get; set; }

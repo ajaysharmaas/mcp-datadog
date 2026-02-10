@@ -48,8 +48,8 @@ public sealed class MetricsTool(IDatadogClient datadogClient, ILogger<MetricsToo
                     pointCount = s.PointList?.Count ?? 0,
                     points = s.PointList?.Take(100).Select(p => new
                     {
-                        timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)p[0]).DateTime,
-                        value = p.Count > 1 ? p[1] : 0
+                        timestamp = DateTimeOffset.FromUnixTimeMilliseconds((long)(p[0] ?? 0)).DateTime,
+                        value = p.Count > 1 ? p[1] : (double?)0
                     })
                 })
             };

@@ -40,7 +40,7 @@ public class MetricsToolTests
                     Scope = "host:web-01",
                     TagSet = new List<string> { "host:web-01" },
                     Aggregation = "avg",
-                    PointList = new List<List<double>>
+                    PointList = new List<List<double?>>
                     {
                         new() { DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), 45.5 },
                         new() { DateTimeOffset.UtcNow.AddMinutes(-5).ToUnixTimeMilliseconds(), 42.3 }
