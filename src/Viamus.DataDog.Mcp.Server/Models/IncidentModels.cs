@@ -77,7 +77,7 @@ public class IncidentAttributes
     public long PublicId { get; set; }
 
     [JsonPropertyName("notification_handles")]
-    public List<string>? NotificationHandles { get; set; }
+    public List<NotificationHandle>? NotificationHandles { get; set; }
 
     [JsonPropertyName("fields")]
     public Dictionary<string, IncidentFieldValue>? Fields { get; set; }
@@ -90,6 +90,15 @@ public class IncidentFieldValue
 
     [JsonPropertyName("value")]
     public object? Value { get; set; }
+}
+
+public class NotificationHandle
+{
+    [JsonPropertyName("display_name")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("handle")]
+    public string? Handle { get; set; }
 }
 
 public class IncidentRelationships

@@ -99,6 +99,34 @@ public class IncidentModelsTests
     }
 
     [Fact]
+    public void IncidentAttributes_Deserializes_NotificationHandles_AsObjects()
+    {
+        // Arrange - matches actual Datadog API response format
+        var json = """
+        {
+            "title": "Incident with handles",
+            "created": "2024-01-15T10:00:00Z",
+            "state": "active",
+            "public_id": 999,
+            "notification_handles": [
+                { "display_name": "oncall", "handle": "@oncall" },
+                { "display_name": "slack-alerts", "handle": "@slack-alerts" }
+            ]
+        }
+        """;
+
+        // Act
+        var result = JsonSerializer.Deserialize<IncidentAttributes>(json);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.NotificationHandles.Should().HaveCount(2);
+        result.NotificationHandles![0].DisplayName.Should().Be("oncall");
+        result.NotificationHandles[0].Handle.Should().Be("@oncall");
+        result.NotificationHandles[1].Handle.Should().Be("@slack-alerts");
+    }
+
+    [Fact]
     public void IncidentAttributes_HandlesNullFields_Gracefully()
     {
         // Arrange

@@ -161,7 +161,11 @@ public class IncidentsToolTests
                 TimeToDetect = 300,
                 TimeToInternalResponse = 600,
                 PublicId = 123,
-                NotificationHandles = new List<string> { "@oncall", "@slack-alerts" }
+                NotificationHandles = new List<NotificationHandle>
+                {
+                    new() { DisplayName = "oncall", Handle = "@oncall" },
+                    new() { DisplayName = "slack-alerts", Handle = "@slack-alerts" }
+                }
             },
             Relationships = new IncidentRelationships
             {
